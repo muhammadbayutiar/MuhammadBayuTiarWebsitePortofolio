@@ -68,9 +68,13 @@ export default function Navbar() {
   }, [showDropdown]);
 
   const scrollToSection = (id: string) => {
-    scrollToSectionUtil(id, 80);
-    // Close dropdown after scroll triggers (no setTimeout hack needed)
+    // Close dropdown IMMEDIATELY before scrolling
     setShowDropdown(false);
+    
+    // Queue scroll on next frame to ensure dropdown animation completes
+    requestAnimationFrame(() => {
+      scrollToSectionUtil(id);
+    });
   };
 
   const menuLinks = [
