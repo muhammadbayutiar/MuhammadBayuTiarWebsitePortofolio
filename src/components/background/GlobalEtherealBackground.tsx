@@ -20,14 +20,16 @@ export default function GlobalEtherealBackground() {
   }, []);
 
   // Background parallax (depth effect) - use static MotionValue on mobile
-  const bgYRaw = useTransform(scrollYProgress, [0, 1], [0, -20]);
+  // Reduced parallax effect for better performance
+  const bgYRaw = useTransform(scrollYProgress, [0, 1], [0, -10]);
   const staticBgY = useMotionValue(0);
-  const bgY = useSpring(isMobile ? staticBgY : bgYRaw, { stiffness: 40, damping: 20 });
+  const bgY = useSpring(isMobile ? staticBgY : bgYRaw, { stiffness: 100, damping: 25 });
 
   // Overlay darkness - use static MotionValue on mobile
-  const overlayOpacityRaw = useTransform(scrollYProgress, [0, 1], [0.08, 0.18]);
+  // Simplified opacity changes
+  const overlayOpacityRaw = useTransform(scrollYProgress, [0, 1], [0.08, 0.15]);
   const staticOverlay = useMotionValue(0.08);
-  const overlayOpacity = useSpring(isMobile ? staticOverlay : overlayOpacityRaw, { stiffness: 40, damping: 20 });
+  const overlayOpacity = useSpring(isMobile ? staticOverlay : overlayOpacityRaw, { stiffness: 100, damping: 25 });
 
   // Mobile-optimized settings with brightness boost
   const baseColor = isMobile 

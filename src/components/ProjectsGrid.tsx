@@ -85,8 +85,6 @@ export default function ProjectsGrid() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
-          contain: 'layout style paint',
-          willChange: 'transform',
         }}
       >
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">

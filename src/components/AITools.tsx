@@ -23,9 +23,9 @@ export default function AITools() {
   const activeY = isMobile ? staticY : yRaw;
 
   const smoothY = useSpring(activeY, { 
-    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
-    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
-    mass: isMobile ? 0.1 : 1
+    stiffness: prefersReducedMotion ? 400 : (isMobile ? 500 : 300),
+    damping: prefersReducedMotion ? 60 : (isMobile ? 70 : 30),
+    mass: 0.1
   });
 
   const [gap, setGap] = useState(32);
@@ -57,8 +57,6 @@ export default function AITools() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
-          contain: 'layout style paint',
-          willChange: 'transform',
         }}
       >
         <motion.div style={{ y: smoothY }} className="max-w-7xl mx-auto px-6">

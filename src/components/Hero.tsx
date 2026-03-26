@@ -32,34 +32,17 @@ export default function Hero() {
     offset: ['start start', 'end start'],
   });
 
-  // Mobile-optimized parallax ranges - use static MotionValues on mobile
-  const heroOpacityRaw = useTransform(scrollYProgress, [0.5, 1], [1, 0]);
-  const staticOpacity = useMotionValue(1);
-  const heroOpacity = isMobile ? staticOpacity : heroOpacityRaw;
-
-  const yRaw = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  // Simplified parallax: only Y movement for desktop, static for mobile
+  // Reduced from 4 motion values to 1 for better performance
+  const yRaw = useTransform(scrollYProgress, [0, 1], [0, -60]);
   const staticY = useMotionValue(0);
   const activeY = isMobile ? staticY : yRaw;
 
-  const scaleRaw = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
-  const staticScale = useMotionValue(1);
-  const activeScale = isMobile ? staticScale : scaleRaw;
-
-  // Profile image tilt effect
-  const imageTiltRaw = useTransform(scrollYProgress, [0, 0.5], [0, 5]);
-  const staticTilt = useMotionValue(0);
-  const imageTilt = isMobile ? staticTilt : imageTiltRaw;
-
-  // Performance-optimized springs
+  // Higher stiffness (faster, less expensive than low stiffness springs)
   const smoothY = useSpring(activeY, { 
-    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
-    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
-    mass: isMobile ? 0.1 : 1
-  });
-  const smoothScale = useSpring(activeScale, { 
-    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
-    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
-    mass: isMobile ? 0.1 : 1
+    stiffness: prefersReducedMotion ? 400 : (isMobile ? 500 : 300),
+    damping: prefersReducedMotion ? 60 : (isMobile ? 70 : 30),
+    mass: 0.1
   });
 
   const [roleIndex, setRoleIndex] = useState(0);
@@ -84,27 +67,21 @@ export default function Hero() {
         transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
-        contain: 'layout style paint',
-        willChange: 'transform',
       }}
     >
       <motion.div
-        style={{ opacity: heroOpacity, y: smoothY, scale: smoothScale }}
+        style={{ y: smoothY }}
         className="w-full max-w-4xl mx-auto px-6 relative z-10"
       >
         <div className="flex flex-col items-center justify-center text-center gap-4 max-w-2xl mx-auto">
 
-          {/* Profile Image with tilt */}
+          {/* Profile Image */}
           <div className="mb-1">
             <motion.div
               variants={scaleIn(0.1)}
               initial="hidden"
               animate="visible"
               className="relative"
-              style={{ 
-                rotateY: imageTilt,
-                transformStyle: 'preserve-3d',
-              }}
             >
               <div className="relative w-28 h-28">
                 {/* Subtle gradient ring */}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreHorizontal } from "lucide-react";
+import { scrollToSection as scrollToSectionUtil } from "@/utils/scrollToSection";
 
 export default function Navbar() {
   const router = useRouter();
@@ -67,22 +68,9 @@ export default function Navbar() {
   }, [showDropdown]);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    
-    if (!element) {
-      console.error("SCROLL ERROR: Section not found ->", id);
-      return;
-    }
-
-    element.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-
-    setTimeout(() => {
-      setActiveSection(id);
-      setShowDropdown(false);
-    }, 300);
+    scrollToSectionUtil(id, 80);
+    // Close dropdown after scroll triggers (no setTimeout hack needed)
+    setShowDropdown(false);
   };
 
   const menuLinks = [
