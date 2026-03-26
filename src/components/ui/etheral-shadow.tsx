@@ -62,7 +62,9 @@ export function Component({
   className
 }: ShadowOverlayProps) {
   const id = useInstanceId();
-  const animationEnabled = animation && animation.scale > 0;
+  // Detect mobile device to disable expensive SVG filter animation
+  const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+  const animationEnabled = animation && animation.scale > 0 && !isMobileDevice;
   const feColorMatrixRef = useRef<SVGFEColorMatrixElement>(null);
   const hueRotateMotionValue = useMotionValue(180);
   const hueRotateAnimation = useRef<AnimationPlaybackControls | null>(null);

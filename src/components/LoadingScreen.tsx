@@ -3,18 +3,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Component as EtherealShadow } from '@/components/ui/etheral-shadow';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
   const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     // Disable scrolling while loader is active
@@ -54,6 +48,7 @@ export default function LoadingScreen() {
     <AnimatePresence mode="wait">
       {isLoading && (
         <motion.div
+          layoutId="loading-screen"
           initial={{ opacity: 1 }}
           exit={{ 
             opacity: 0,
@@ -89,11 +84,12 @@ export default function LoadingScreen() {
           {/* Enhanced radial glow overlay for depth */}
           <motion.div 
             className="absolute inset-0 pointer-events-none"
+            initial={false}
             animate={{
               opacity: [0.3, 0.5, 0.3],
             }}
             transition={{
-              duration: 4,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut"
             }}
@@ -105,11 +101,12 @@ export default function LoadingScreen() {
           {/* Animated vignette */}
           <motion.div 
             className="absolute inset-0 pointer-events-none"
+            initial={false}
             animate={{
               opacity: [0.4, 0.6, 0.4],
             }}
             transition={{
-              duration: 3,
+              duration: 5,
               repeat: Infinity,
               ease: "easeInOut"
             }}

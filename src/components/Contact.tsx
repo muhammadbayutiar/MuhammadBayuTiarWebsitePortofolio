@@ -1,15 +1,32 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useSpring, useReducedMotion, useMotionValue } from 'framer-motion';
 import { Mail, Github, Linkedin } from 'lucide-react';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function Contact() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
   
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Mobile-optimized parallax - use static MotionValue on mobile
+  const yRaw = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  const staticY = useMotionValue(0);
+  const activeY = isMobile ? staticY : yRaw;
+
+  const smoothY = useSpring(activeY, { 
+    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
+    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
+    mass: isMobile ? 0.1 : 1
+  });
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -31,30 +48,6 @@ export default function Contact() {
     type: 'success' | 'error' | null;
     message: string;
   }>({ type: null, message: '' });
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"]
-  });
-
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
 
   // Ripple effect handler (desktop only)
   const handleRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -321,6 +314,8 @@ export default function Contact() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
         <motion.div 

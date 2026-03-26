@@ -2,9 +2,10 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
-import { motion, useTransform, useScroll, AnimatePresence, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useTransform, useScroll, AnimatePresence, useSpring, useReducedMotion, useMotionValue } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 const easeOutQuart = [0.22, 1, 0.36, 1] as const;
 
@@ -24,45 +25,41 @@ const scaleIn = (delay: number) => ({
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const isMobile = useMobileDetect();
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
 
-  // Mobile-optimized parallax ranges
-  const heroOpacity = useTransform(scrollYProgress, [0.5, 1], [1, 0]);
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [0, -40] : [0, -80]
-  );
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
+  // Mobile-optimized parallax ranges - use static MotionValues on mobile
+  const heroOpacityRaw = useTransform(scrollYProgress, [0.5, 1], [1, 0]);
+  const staticOpacity = useMotionValue(1);
+  const heroOpacity = isMobile ? staticOpacity : heroOpacityRaw;
+
+  const yRaw = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const staticY = useMotionValue(0);
+  const activeY = isMobile ? staticY : yRaw;
+
+  const scaleRaw = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
+  const staticScale = useMotionValue(1);
+  const activeScale = isMobile ? staticScale : scaleRaw;
 
   // Profile image tilt effect
-  const imageTilt = useTransform(
-    scrollYProgress,
-    [0, 0.5],
-    isMobile ? [0, 2] : [0, 5]
-  );
+  const imageTiltRaw = useTransform(scrollYProgress, [0, 0.5], [0, 5]);
+  const staticTilt = useMotionValue(0);
+  const imageTilt = isMobile ? staticTilt : imageTiltRaw;
 
   // Performance-optimized springs
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
+  const smoothY = useSpring(activeY, { 
+    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
+    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
+    mass: isMobile ? 0.1 : 1
   });
-  const smoothScale = useSpring(scale, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
+  const smoothScale = useSpring(activeScale, { 
+    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
+    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
+    mass: isMobile ? 0.1 : 1
   });
 
   const [roleIndex, setRoleIndex] = useState(0);
@@ -87,6 +84,8 @@ export default function Hero() {
         transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
+        contain: 'layout style paint',
+        willChange: 'transform',
       }}
     >
       <motion.div

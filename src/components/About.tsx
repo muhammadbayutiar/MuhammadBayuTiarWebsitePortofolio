@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform, useSpring, useReducedMotion, useMotionValue } from 'framer-motion';
 import { MessageSquare, Brain, Code, Zap } from 'lucide-react';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 const fadeIn = (delay: number) => ({
   hidden: { opacity: 0, y: 30 },
@@ -32,28 +33,13 @@ interface RoleCardProps {
 }
 
 const RoleCard = ({ title, description, icon, index, isMobile }: RoleCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: cardRef,
-    offset: ["start end", "end start"]
-  });
-
-  // Subtle parallax on desktop only
-  const cardY = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    isMobile ? [0, 0, 0] : [20, 0, -20]
-  );
-
   return (
     <motion.div
-      ref={cardRef}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
       variants={fadeIn(index * 0.1)}
       style={{ 
-        y: cardY,
         transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
@@ -99,30 +85,22 @@ const RoleCard = ({ title, description, icon, index, isMobile }: RoleCardProps) 
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const isMobile = useMobileDetect();
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"]
   });
 
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
+  // Mobile-optimized parallax - use static MotionValue on mobile
+  const yRaw = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  const staticY = useMotionValue(0);
+  const activeY = isMobile ? staticY : yRaw;
+
+  const smoothY = useSpring(activeY, { 
+    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
+    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
+    mass: isMobile ? 0.1 : 1
   });
 
   const roles = [
@@ -161,6 +139,8 @@ export default function About() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
         <motion.div style={{ y: smoothY }} className="max-w-6xl mx-auto w-full">

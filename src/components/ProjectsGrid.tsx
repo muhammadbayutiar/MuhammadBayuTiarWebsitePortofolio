@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform, useMotionValue } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Github, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,17 +18,19 @@ export default function ProjectsGrid() {
   const prefersReducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Scroll-based animations
+  // Scroll-based animations - use static MotionValue on mobile
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"]
   });
 
-  const headerY = useTransform(
+  const headerYRaw = useTransform(
     scrollYProgress,
     [0, 0.5, 1],
-    isMobile ? [20, 0, -20] : [40, 0, -40]
+    [40, 0, -40]
   );
+  const staticHeaderY = useMotionValue(0);
+  const headerY = isMobile ? staticHeaderY : headerYRaw;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -83,6 +85,8 @@ export default function ProjectsGrid() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">

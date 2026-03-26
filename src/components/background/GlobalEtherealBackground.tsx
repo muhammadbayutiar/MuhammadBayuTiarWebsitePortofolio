@@ -1,21 +1,14 @@
 'use client';
 
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Component } from '@/components/ui/etheral-shadow';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function GlobalEtherealBackground() {
   const { scrollYProgress } = useScroll();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
   const [isReady, setIsReady] = useState(false);
-
-  // Detect mobile on mount
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Delay background activation until loader is done
   useEffect(() => {
@@ -26,22 +19,24 @@ export default function GlobalEtherealBackground() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Background parallax (depth effect) - ONLY animate wrapper - Minimal range for full coverage
+  // Background parallax (depth effect) - use static MotionValue on mobile
   const bgYRaw = useTransform(scrollYProgress, [0, 1], [0, -20]);
-  const bgY = useSpring(bgYRaw, { stiffness: 40, damping: 20 });
+  const staticBgY = useMotionValue(0);
+  const bgY = useSpring(isMobile ? staticBgY : bgYRaw, { stiffness: 40, damping: 20 });
 
-  // Overlay darkness - MINIMAL for maximum visibility
+  // Overlay darkness - use static MotionValue on mobile
   const overlayOpacityRaw = useTransform(scrollYProgress, [0, 1], [0.08, 0.18]);
-  const overlayOpacity = useSpring(overlayOpacityRaw, { stiffness: 40, damping: 20 });
+  const staticOverlay = useMotionValue(0.08);
+  const overlayOpacity = useSpring(isMobile ? staticOverlay : overlayOpacityRaw, { stiffness: 40, damping: 20 });
 
   // Mobile-optimized settings with brightness boost
   const baseColor = isMobile 
-    ? 'rgba(90, 160, 255, 1)'      // Mobile: maximum brightness
-    : 'rgba(72, 140, 255, 0.95)';  // Desktop: vibrant but elegant
+    ? 'rgba(90, 160, 255, 0.85)'      // Mobile: reduced opacity for lighter compositing
+    : 'rgba(72, 140, 255, 0.95)';     // Desktop: vibrant but elegant
   
-  const animationScale = isMobile ? 60 : 78;
-  const animationSpeed = isMobile ? 50 : 65;
-  const noiseOpacity = isMobile ? 0.25 : 0.35;
+  const animationScale = isMobile ? 30 : 78;
+  const animationSpeed = isMobile ? 20 : 65;
+  const noiseOpacity = isMobile ? 0.15 : 0.35;
 
   return (
     <>
@@ -59,7 +54,9 @@ export default function GlobalEtherealBackground() {
             height: '150%',
             y: bgY, 
             zIndex: -20,
-            filter: 'contrast(1.1) brightness(1.05)'
+            filter: isMobile ? 'none' : 'contrast(1.1) brightness(1.05)',
+            transform: 'translate3d(0, 0, 0)',
+            willChange: 'transform'
           }}
         >
           <Component

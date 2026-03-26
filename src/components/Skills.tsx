@@ -1,37 +1,30 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform, useSpring, useReducedMotion, useMotionValue } from 'framer-motion';
 import SkillsAccordion from '@/components/ui/skills-accordion';
 import { skillCategories } from '@/data/skillCategories';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function Skills() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const isMobile = useMobileDetect();
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"]
   });
 
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
+  // Mobile-optimized parallax - use static MotionValue on mobile
+  const yRaw = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  const staticY = useMotionValue(0);
+  const activeY = isMobile ? staticY : yRaw;
+
+  const smoothY = useSpring(activeY, { 
+    stiffness: prefersReducedMotion ? 300 : (isMobile ? 400 : 80),
+    damping: prefersReducedMotion ? 50 : (isMobile ? 60 : 20),
+    mass: isMobile ? 0.1 : 1
   });
 
   return (
@@ -47,6 +40,8 @@ export default function Skills() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
         <motion.div style={{ y: smoothY }} className="w-full max-w-7xl mx-auto px-6 lg:px-8">
