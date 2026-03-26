@@ -32,8 +32,8 @@ export default function Navbar() {
         });
       },
       {
-        rootMargin: "-40% 0px -40% 0px",
-        threshold: 0,
+        rootMargin: "-20% 0px -60% 0px",
+        threshold: 0.2,
       }
     );
 
@@ -71,10 +71,11 @@ export default function Navbar() {
     // Close dropdown IMMEDIATELY before scrolling
     setShowDropdown(false);
     
-    // Queue scroll on next frame to ensure dropdown animation completes
-    requestAnimationFrame(() => {
+    // Wait for dropdown animation to fully finish before scrolling
+    // Framer-motion dropdown needs time to unmount (prevents layout shift)
+    setTimeout(() => {
       scrollToSectionUtil(id);
-    });
+    }, 250);
   };
 
   const menuLinks = [

@@ -6,6 +6,7 @@ import { motion, useTransform, useScroll, AnimatePresence, useSpring, useReduced
 import { ArrowRight } from 'lucide-react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { scrollToSection as scrollToSectionUtil } from '@/utils/scrollToSection';
 
 const easeOutQuart = [0.22, 1, 0.36, 1] as const;
 
@@ -55,7 +56,7 @@ export default function Hero() {
   }, []);
 
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    scrollToSectionUtil(id);
   };
 
   return (
