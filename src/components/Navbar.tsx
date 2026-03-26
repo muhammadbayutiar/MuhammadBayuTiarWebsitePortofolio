@@ -68,14 +68,14 @@ export default function Navbar() {
   }, [showDropdown]);
 
   const scrollToSection = (id: string) => {
-    // Close dropdown IMMEDIATELY before scrolling
+    // Close dropdown IMMEDIATELY
     setShowDropdown(false);
     
-    // Wait for dropdown animation to fully finish before scrolling
-    // Framer-motion dropdown needs time to unmount (prevents layout shift)
-    setTimeout(() => {
+    // Use requestAnimationFrame for safe frame timing (no setTimeout race conditions)
+    // scrollToSectionUtil already has retry logic with RAF
+    requestAnimationFrame(() => {
       scrollToSectionUtil(id);
-    }, 250);
+    });
   };
 
   const menuLinks = [

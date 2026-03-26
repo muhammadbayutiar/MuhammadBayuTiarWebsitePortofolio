@@ -44,7 +44,7 @@ export function scrollToSection(
         // Retry using requestAnimationFrame for next frame
         requestAnimationFrame(attemptScroll);
       } else {
-        console.warn(`[Scroll] Section not found after ${maxRetries} retries: ${id}`);
+        console.error(`[Scroll] ❌ Section not found after ${maxRetries} retries: #${id}`);
       }
       return;
     }
@@ -55,6 +55,14 @@ export function scrollToSection(
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const elementTop = elementRect.top + scrollTop;
     const targetScroll = Math.max(0, elementTop - navbarHeight);
+
+    // Debug log for verification
+    console.log(`[Scroll] ✓ Scrolling to #${id}`, {
+      navbarHeight,
+      elementTop,
+      targetScroll,
+      behavior
+    });
 
     // Perform the scroll
     window.scrollTo({
