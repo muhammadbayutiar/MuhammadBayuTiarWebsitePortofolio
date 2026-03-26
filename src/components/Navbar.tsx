@@ -89,15 +89,16 @@ export default function Navbar() {
 
   return (
     <nav
-      className="fixed top-0 left-0 w-full z-50 transition-all duration-300 pointer-events-none"
+      className="fixed top-0 left-0 w-full transition-all duration-300"
       style={{
+        zIndex: 9999,
         backgroundColor: 'transparent',
         backdropFilter: scrolled ? 'blur(6px)' : 'none',
         WebkitBackdropFilter: scrolled ? 'blur(6px)' : 'none',
         borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between pointer-events-auto">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <motion.button
           onClick={() => scrollToSection('home')}
           className={`text-lg font-semibold transition-all duration-300 px-2 py-1 rounded ${
