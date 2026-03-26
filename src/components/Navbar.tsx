@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreHorizontal } from "lucide-react";
-import { scrollToSection as scrollToSectionUtil } from "@/utils/scrollToSection";
 
 export default function Navbar() {
   const router = useRouter();
@@ -68,14 +67,19 @@ export default function Navbar() {
   }, [showDropdown]);
 
   const scrollToSection = (id: string) => {
-    // Close dropdown IMMEDIATELY
-    setShowDropdown(false);
-    
-    // Use requestAnimationFrame for safe frame timing (no setTimeout race conditions)
-    // scrollToSectionUtil already has retry logic with RAF
-    requestAnimationFrame(() => {
-      scrollToSectionUtil(id);
+    const element = document.getElementById(id);
+
+    if (!element) {
+      console.error("Scroll failed: section not found ->", id);
+      return;
+    }
+
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
+
+    setShowDropdown(false);
   };
 
   const menuLinks = [

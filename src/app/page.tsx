@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import LoadingScreen from "@/components/LoadingScreen";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import { scrollToSection } from '@/utils/scrollToSection';
 
 // Lazy load below-fold sections
 const About = dynamic(() => import('@/components/About'));
@@ -24,9 +23,12 @@ export default function Home() {
     const section = params.get('section');
     
     if (section) {
-      setTimeout(() => {
-        scrollToSection(section);
-      }, 500);
+      const element = document.getElementById(section);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 500);
+      }
     }
   }, []);
 
