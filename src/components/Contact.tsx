@@ -1,12 +1,11 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Mail, Github, Linkedin } from 'lucide-react';
 
 export default function Contact() {
   const sectionRef = useRef<HTMLElement>(null);
-  const prefersReducedMotion = useReducedMotion();
   const [isMobile, setIsMobile] = useState(false);
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
   
@@ -46,15 +45,11 @@ export default function Contact() {
   });
 
   // Mobile-optimized parallax
-  const y = useTransform(
+  const smoothY = useTransform(
     scrollYProgress, 
     [0, 1], 
     isMobile ? [20, -20] : [40, -40]
   );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
 
   // Ripple effect handler (desktop only)
   const handleRipple = (e: React.MouseEvent<HTMLButtonElement>) => {

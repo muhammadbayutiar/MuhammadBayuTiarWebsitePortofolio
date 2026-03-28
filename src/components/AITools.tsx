@@ -1,39 +1,35 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValue } from 'framer-motion';
 import Image from 'next/image';
 import { aiToolsData } from '@/data/aiTools';
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function AITools() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
 
-  // Mobile detection
+  const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
+
+  const shouldAnimate = isMounted ? (!isMobile && !prefersReducedMotion) : true;
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    // @ts-expect-error - optimization
+    layoutEffect: shouldAnimate
   });
 
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
+  const yTransform = useTransform(scrollYProgress, [0, 1], [20, -20]);
+  const staticY = useMotionValue(0);
+  const y = shouldAnimate ? yTransform : staticY;
 
   const [gap, setGap] = useState(32);
 
@@ -64,9 +60,17 @@ export default function AITools() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
-        <motion.div style={{ y: smoothY }} className="max-w-7xl mx-auto px-6">
+        <motion.div 
+          style={{ 
+            y: shouldAnimate ? y : 0,
+            willChange: shouldAnimate ? 'transform' : 'auto'
+          }} 
+          className="max-w-7xl mx-auto px-6"
+        >
 
           {/* Title + Description */}
           <div className="text-center max-w-4xl mx-auto mb-16">
@@ -149,4 +153,3 @@ export default function AITools() {
     </>
   );
 }
-

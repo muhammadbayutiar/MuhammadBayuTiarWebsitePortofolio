@@ -3,18 +3,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Component as EtherealShadow } from '@/components/ui/etheral-shadow';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
   const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     // Disable scrolling while loader is active
@@ -54,6 +48,7 @@ export default function LoadingScreen() {
     <AnimatePresence mode="wait">
       {isLoading && (
         <motion.div
+          layoutId="loading-screen"
           initial={{ opacity: 1 }}
           exit={{ 
             opacity: 0,
@@ -87,34 +82,13 @@ export default function LoadingScreen() {
           </div>
 
           {/* Enhanced radial glow overlay for depth */}
-          <motion.div 
-            className="absolute inset-0 pointer-events-none"
-            animate={{
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            style={{
-              background: 'radial-gradient(circle at 50% 50%, rgba(80, 160, 255, 0.4) 0%, rgba(6, 182, 212, 0.2) 40%, transparent 70%)',
-            }}
-          />
-
-          {/* Animated vignette */}
-          <motion.div 
-            className="absolute inset-0 pointer-events-none"
-            animate={{
-              opacity: [0.4, 0.6, 0.4],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            style={{
-              background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(10, 10, 10, 0.6) 100%)',
+          <div 
+            className="absolute inset-0 pointer-events-none opacity-40"
+            style={{ 
+              background: `
+                radial-gradient(circle at 50% 50%, rgba(80, 160, 255, 0.4) 0%, rgba(6, 182, 212, 0.2) 40%, transparent 70%),
+                radial-gradient(circle at 50% 50%, transparent 0%, rgba(10, 10, 10, 0.6) 100%)
+              `
             }}
           />
 
@@ -306,4 +280,3 @@ export default function LoadingScreen() {
     </AnimatePresence>
   );
 }
-

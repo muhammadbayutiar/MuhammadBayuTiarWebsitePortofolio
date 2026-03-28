@@ -1,6 +1,6 @@
 'use client';
-import { useRef, useId, useEffect, CSSProperties } from 'react';
-import { animate, useMotionValue, AnimationPlaybackControls } from 'framer-motion';
+import { useRef, useId, useEffect, useState, CSSProperties } from 'react';
+import { animate, useMotionValue, AnimationPlaybackControls, useInView } from 'framer-motion';
 
 // Type definitions
 interface ResponsiveImage {
@@ -62,7 +62,40 @@ export function Component({
   className
 }: ShadowOverlayProps) {
   const id = useInstanceId();
-  const animationEnabled = animation && animation.scale > 0;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { margin: "200px" });
+  
+  // FIX: Use state to prevent hydration mismatch
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Always enable animation on first render (matches SSR)
+  // Then disable on mobile or when off-screen after hydration
+  const animationEnabled = isMounted 
+    ? (animation && animation.scale > 0 && !isMobileDevice && isInView)
+    : (animation && animation.scale > 0);
+
+  // Detect mobile AFTER component mounts (client-side only)
+  useEffect(() => {
+    // Only run on client
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => {
+        setIsMobileDevice(window.innerWidth < 768);
+      };
+      
+      // Check immediately
+      checkMobile();
+      
+      // Listen for resize
+      window.addEventListener('resize', checkMobile, { passive: true });
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
   const feColorMatrixRef = useRef<SVGFEColorMatrixElement>(null);
   const hueRotateMotionValue = useMotionValue(180);
   const hueRotateAnimation = useRef<AnimationPlaybackControls | null>(null);
@@ -102,6 +135,7 @@ export function Component({
 
   return (
     <div
+      ref={containerRef}
       className={className}
       style={{
         overflow: "hidden",
@@ -127,7 +161,7 @@ export function Component({
                 <feTurbulence
                   result="undulation"
                   numOctaves="2"
-                  baseFrequency={`${mapRange(animation.scale, 0, 100, 0.001, 0.0005)},${mapRange(animation.scale, 0, 100, 0.004, 0.002)}`}
+                  baseFrequency={`${mapRange(animation!.scale, 0, 100, 0.001, 0.0005)},${mapRange(animation!.scale, 0, 100, 0.004, 0.002)}`}
                   seed="0"
                   type="turbulence"
                 />

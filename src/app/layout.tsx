@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
-import GlobalEtherealBackground from "@/components/background/GlobalEtherealBackground";
 
 function getMetadataBase() {
   const fallbackUrl = "http://localhost:3000";
@@ -83,6 +82,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -92,9 +98,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="relative antialiased font-sans">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {/* GLOBAL ETHEREAL BACKGROUND - Scroll Reactive */}
-          <GlobalEtherealBackground />
-
           {/* MAIN CONTENT */}
           <main className="relative z-10">
             {children}

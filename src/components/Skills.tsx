@@ -1,38 +1,34 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValue } from 'framer-motion';
 import SkillsAccordion from '@/components/ui/skills-accordion';
 import { skillCategories } from '@/data/skillCategories';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 export default function Skills() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
 
-  // Mobile detection
+  const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
+
+  const shouldAnimate = isMounted ? (!isMobile && !prefersReducedMotion) : true;
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    // @ts-expect-error - optimization
+    layoutEffect: shouldAnimate
   });
 
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
+  const yTransform = useTransform(scrollYProgress, [0, 1], [20, -20]);
+  const staticY = useMotionValue(0);
+  const y = shouldAnimate ? yTransform : staticY;
 
   return (
     <>
@@ -47,9 +43,17 @@ export default function Skills() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
-        <motion.div style={{ y: smoothY }} className="w-full max-w-7xl mx-auto px-6 lg:px-8">
+        <motion.div 
+          style={{ 
+            y: shouldAnimate ? y : 0,
+            willChange: shouldAnimate ? 'transform' : 'auto'
+          }} 
+          className="w-full max-w-7xl mx-auto px-6 lg:px-8"
+        >
           {/* Flex Layout: Left Text + Right Accordion */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-12">
             
@@ -102,4 +106,3 @@ export default function Skills() {
     </>
   );
 }
-

@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import Image from 'next/image';
-import { motion, useTransform, useScroll, AnimatePresence, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useTransform, useScroll, AnimatePresence, useReducedMotion, useMotionValue } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 const easeOutQuart = [0.22, 1, 0.36, 1] as const;
 
@@ -24,46 +26,37 @@ const scaleIn = (delay: number) => ({
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
 
-  // Mobile detection
+  const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
+
+  const shouldAnimate = isMounted ? (!isMobile && !prefersReducedMotion) : true;
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
+    // @ts-expect-error - optimization
+    layoutEffect: shouldAnimate
   });
 
-  // Mobile-optimized parallax ranges
-  const heroOpacity = useTransform(scrollYProgress, [0.5, 1], [1, 0]);
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [0, -40] : [0, -80]
-  );
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
+  const staticZero = useMotionValue(0);
+  const staticOne = useMotionValue(1);
 
-  // Profile image tilt effect
-  const imageTilt = useTransform(
-    scrollYProgress,
-    [0, 0.5],
-    isMobile ? [0, 2] : [0, 5]
-  );
+  const heroOpacityRaw = useTransform(scrollYProgress, [0.5, 1], [1, 0]);
+  const heroOpacity = shouldAnimate ? heroOpacityRaw : staticOne;
 
-  // Performance-optimized springs
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
-  const smoothScale = useSpring(scale, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
+  const yTransform = useTransform(scrollYProgress, [0, 1], [0, -40]); // Reduced range from -80 to -40
+  const smoothY = shouldAnimate ? yTransform : staticZero;
+
+  const scaleTransform = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
+  const smoothScale = shouldAnimate ? scaleTransform : staticOne;
+
+  const imageTiltRaw = useTransform(scrollYProgress, [0, 0.5], [0, 5]);
+  const imageTilt = shouldAnimate ? imageTiltRaw : staticZero;
 
   const [roleIndex, setRoleIndex] = useState(0);
 
@@ -87,6 +80,8 @@ export default function Hero() {
         transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
+        contain: 'layout style paint',
+        willChange: 'transform',
       }}
     >
       <motion.div

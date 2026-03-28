@@ -67,22 +67,25 @@ export default function Navbar() {
   }, [showDropdown]);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
+    console.log(`[DEBUG] scrollToSection called for: ${id}`);
     
+    const element = document.getElementById(id);
+
     if (!element) {
-      console.error("SCROLL ERROR: Section not found ->", id);
+      console.error("Scroll failed: section not found ->", id);
       return;
     }
 
+    console.log(`[DEBUG] Element found, scrolling to: ${id}`);
+    
+    const isMobile = window.innerWidth < 768;
+    
     element.scrollIntoView({
-      behavior: "smooth",
+      behavior: isMobile ? "auto" : "smooth",
       block: "start",
     });
 
-    setTimeout(() => {
-      setActiveSection(id);
-      setShowDropdown(false);
-    }, 300);
+    // DON'T close dropdown here - let the caller handle it
   };
 
   const menuLinks = [
@@ -154,14 +157,64 @@ export default function Navbar() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.18, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
-                    onClick={() => {
+                    
+                    // === MOBILE TOUCH HANDLER (Primary for mobile devices) ===
+                    onTouchStart={() => {
+                      console.log(`[TOUCH START] ${link.name}`);
+                    }}
+                    
+                    onTouchEnd={(e) => {
+                      console.log(`[TOUCH END] ${link.name} - type: ${link.type}`);
+                      
+                      // Prevent default to avoid ghost clicks
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      if (link.type === "scroll" && link.id) {
+                        console.log(`[TOUCH] Navigating to section: ${link.id}`);
+                        
+                        // Start navigation immediately
+                        scrollToSection(link.id);
+                        
+                        // Close dropdown after a delay to let navigation start
+                        requestAnimationFrame(() => {
+                          setTimeout(() => {
+                            console.log(`[TOUCH] Closing dropdown after navigation to: ${link.id}`);
+                            setShowDropdown(false);
+                          }, 300); // Longer delay for About/Projects
+                        });
+                        
+                      } else if (link.type === "route" && link.path) {
+                        console.log(`[TOUCH] Routing to: ${link.path}`);
+                        router.push(link.path);
+                        setShowDropdown(false);
+                      }
+                    }}
+                    
+                    // === DESKTOP CLICK HANDLER (Fallback) ===
+                    onClick={(e) => {
+                      console.log(`[CLICK] ${link.name} - type: ${link.type}`);
+                      
+                      // Ignore synthetic clicks from touch events
+                      if (e.detail === 0) {
+                        console.log(`[CLICK] Synthetic click detected, ignoring`);
+                        return;
+                      }
+                      
                       if (link.type === "route" && link.path) {
+                        console.log(`[CLICK] Routing to: ${link.path}`);
                         router.push(link.path);
                         setShowDropdown(false);
                       } else if (link.type === "scroll" && link.id) {
+                        console.log(`[CLICK] Navigating to section: ${link.id}`);
                         scrollToSection(link.id);
+                        setTimeout(() => {
+                          console.log(`[CLICK] Closing dropdown after navigation to: ${link.id}`);
+                          setShowDropdown(false);
+                        }, 150);
                       }
                     }}
+                    
                     className={`w-full text-left px-4 py-2 text-sm transition-all duration-300 first:rounded-t-2xl last:rounded-b-2xl ${
                       link.type === "scroll" && activeSection === link.id
                         ? 'text-cyan-400 bg-white/10 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]'

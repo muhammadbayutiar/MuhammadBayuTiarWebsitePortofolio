@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValue } from 'framer-motion';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 const fadeIn = (delay: number) => ({
   hidden: { opacity: 0, y: 30 },
@@ -25,19 +26,21 @@ export default function Education() {
   const sectionRef = useRef<HTMLElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
 
-  // Mobile detection
+  const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
+
+  const shouldAnimate = isMounted ? (!isMobile && !prefersReducedMotion) : true;
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    // @ts-expect-error - optimization
+    layoutEffect: shouldAnimate
   });
 
   // Timeline progress bar animation
@@ -46,16 +49,9 @@ export default function Education() {
     offset: ["start center", "end center"]
   });
 
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
+  const yTransform = useTransform(scrollYProgress, [0, 1], [20, -20]);
+  const staticY = useMotionValue(0);
+  const y = shouldAnimate ? yTransform : staticY;
 
   // Timeline progress bar height
   const progressHeight = useTransform(timelineProgress, [0, 1], ["0%", "100%"]);
@@ -73,9 +69,17 @@ export default function Education() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
-        <motion.div style={{ y: smoothY }} className="max-w-3xl mx-auto w-full">
+        <motion.div 
+          style={{ 
+            y: shouldAnimate ? y : 0,
+            willChange: shouldAnimate ? 'transform' : 'auto'
+          }} 
+          className="max-w-3xl mx-auto w-full"
+        >
           <div className="flex flex-col items-center justify-center text-center space-y-10">
             
             {/* Label */}

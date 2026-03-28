@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ArrowRight, Github, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { projectsData } from '@/data/projects';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 function getPreviewImage(project: (typeof projectsData)[0]) {
   return project.image ?? project.gallery?.[0] ?? null;
@@ -14,7 +15,7 @@ function getPreviewImage(project: (typeof projectsData)[0]) {
 export default function ProjectsGrid() {
   const [activeIndex, setActiveIndex] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
   const prefersReducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -27,19 +28,8 @@ export default function ProjectsGrid() {
   const headerY = useTransform(
     scrollYProgress,
     [0, 0.5, 1],
-    isMobile ? [20, 0, -20] : [40, 0, -40]
+    isMobile ? [0, 0, 0] : [40, 0, -40]
   );
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const nextProject = useCallback(() => {
     requestAnimationFrame(() => {
@@ -83,6 +73,8 @@ export default function ProjectsGrid() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">

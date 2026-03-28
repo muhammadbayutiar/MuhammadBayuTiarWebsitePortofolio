@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion';
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValue } from 'framer-motion';
 import { MessageSquare, Brain, Code, Zap } from 'lucide-react';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 const fadeIn = (delay: number) => ({
   hidden: { opacity: 0, y: 30 },
@@ -12,6 +13,8 @@ const fadeIn = (delay: number) => ({
     transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as const } 
   },
 });
+
+
 
 // Slide in from side animation
 const slideInFromLeft = (delay: number) => ({
@@ -32,37 +35,20 @@ interface RoleCardProps {
 }
 
 const RoleCard = ({ title, description, icon, index, isMobile }: RoleCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: cardRef,
-    offset: ["start end", "end start"]
-  });
-
-  // Subtle parallax on desktop only
-  const cardY = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    isMobile ? [0, 0, 0] : [20, 0, -20]
-  );
-
   return (
     <motion.div
-      ref={cardRef}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
       variants={fadeIn(index * 0.1)}
       style={{ 
-        y: cardY,
         transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
       }}
       whileHover={isMobile ? {} : { 
-        scale: 1.02, 
-        y: -4,
-        rotateY: 2,
-        transition: { duration: 0.3 }
+        scale: 1.02,
+        transition: { duration: 0.2, ease: "easeOut" }
       }}
       className="group relative w-full h-full bg-white/5 backdrop-blur-md border border-white/10 hover:border-white/20 rounded-xl p-5 transition-all duration-300 flex flex-col"
     >
@@ -73,16 +59,9 @@ const RoleCard = ({ title, description, icon, index, isMobile }: RoleCardProps) 
       
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full">
-        <motion.div 
-          className="mb-4 text-3xl transition-colors duration-300"
-          whileHover={isMobile ? {} : { 
-            scale: 1.1, 
-            rotate: 5,
-            transition: { duration: 0.3 }
-          }}
-        >
+        <div className="mb-4 text-3xl transition-colors duration-300">
           {icon}
-        </motion.div>
+        </div>
         
         <h3 className="text-base font-semibold text-white mb-2 tracking-tight">
           {title}
@@ -99,31 +78,26 @@ const RoleCard = ({ title, description, icon, index, isMobile }: RoleCardProps) 
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobileDetect();
 
-  // Mobile detection
+  const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
+
+  const shouldAnimate = isMounted ? (!isMobile && !prefersReducedMotion) : true;
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    // @ts-expect-error - optimization
+    layoutEffect: shouldAnimate
   });
 
-  // Mobile-optimized parallax
-  const y = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    isMobile ? [20, -20] : [40, -40]
-  );
-  const smoothY = useSpring(y, { 
-    stiffness: prefersReducedMotion ? 200 : (isMobile ? 150 : 80),
-    damping: prefersReducedMotion ? 40 : (isMobile ? 30 : 20)
-  });
+  const yTransform = useTransform(scrollYProgress, [0, 1], [20, -20]);
+  const staticY = useMotionValue(0);
+  const y = shouldAnimate ? yTransform : staticY;
 
   const roles = [
     { 
@@ -161,9 +135,17 @@ export default function About() {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          contain: 'layout style paint',
+          willChange: 'transform',
         }}
       >
-        <motion.div style={{ y: smoothY }} className="max-w-6xl mx-auto w-full">
+        <motion.div 
+          style={{ 
+            y: shouldAnimate ? y : 0,
+            willChange: shouldAnimate ? 'transform' : 'auto'
+          }} 
+          className="max-w-6xl mx-auto w-full"
+        >
           <div className="flex flex-col items-center justify-center text-center space-y-6">
             
             {/* Heading with slide-in effect */}
