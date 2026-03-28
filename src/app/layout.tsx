@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import GlobalEtherealBackground from "@/components/background/GlobalEtherealBackground";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 function getMetadataBase() {
   const fallbackUrl = "http://localhost:3000";
@@ -106,6 +107,7 @@ export default function RootLayout({
           <main className="relative z-10">
             {children}
           </main>
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
